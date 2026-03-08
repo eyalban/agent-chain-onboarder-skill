@@ -25,12 +25,13 @@ async function main() {
   // Simulate agent config — in production this would be fetched from the agent's API
   // For our OpenClaw agent, we create a representative config object
   const agentConfig = {
-    name: "Eyal's OpenClaw Agent",
+    name: "Foxtail",
     platform: "openclaw",
     hosting: "hostinger-vps",
-    capabilities: ["chat", "telegram"],
+    channels: ["telegram"],
+    tools: ["exec", "chat"],
     model: "gpt-4o-mini",
-    created: "2026-03-08",
+    version: "1.0.0",
   };
 
   const configJson = JSON.stringify(agentConfig);

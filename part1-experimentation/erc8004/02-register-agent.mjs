@@ -18,9 +18,9 @@ async function main() {
   console.log("Wallet:", signer.address);
 
   // Agent URI — describes the agent. For a real deployment, this would be
-  // an IPFS or HTTPS URL pointing to a registration JSON file.
-  // For this experiment, we use a descriptive placeholder.
-  const agentURI = "https://join39.org/api/eyalban/agentfacts.json";
+  // an IPFS or HTTPS URL pointing to a registration JSON file per ERC-8004 spec.
+  // For this experiment, we point to Foxtail's GitHub skill repo as a public reference.
+  const agentURI = process.env.AGENT_URI || "https://github.com/eyalban/agent-chain-onboarder-skill";
 
   console.log("Agent URI:", agentURI);
   console.log("\nSending register transaction...");

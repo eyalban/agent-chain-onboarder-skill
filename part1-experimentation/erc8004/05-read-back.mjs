@@ -27,8 +27,8 @@ async function main() {
   const configHashBytes = await identityRegistry.getMetadata(agentId, "configHash");
   const platformBytes = await identityRegistry.getMetadata(agentId, "agentPlatform");
 
-  const configHash = configHashBytes.length > 0 ? ethers.toUtf8String(configHashBytes) : "(not set)";
-  const platform = platformBytes.length > 0 ? ethers.toUtf8String(platformBytes) : "(not set)";
+  const configHash = ethers.dataLength(configHashBytes) > 0 ? ethers.toUtf8String(configHashBytes) : "(not set)";
+  const platform = ethers.dataLength(platformBytes) > 0 ? ethers.toUtf8String(platformBytes) : "(not set)";
 
   console.log("┌─────────────────────────────────────────────────┐");
   console.log("│            ERC-8004 Agent Identity              │");

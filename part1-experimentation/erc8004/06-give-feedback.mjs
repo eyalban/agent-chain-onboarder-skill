@@ -15,7 +15,6 @@ import { ethers } from "ethers";
 import {
   provider,
   getSigner,
-  getIdentityRegistry,
   getReputationRegistry,
   basescanTx,
 } from "./lib/contracts.mjs";
@@ -80,7 +79,6 @@ async function main() {
 
   // Read it back
   console.log("\n=== Reading Feedback Back ===");
-  const identityRegistry = getIdentityRegistry(provider);
   const reputationRead = getReputationRegistry(provider);
 
   const [value, valueDecimals, tag1, tag2, isRevoked] = await reputationRead.readFeedback(
