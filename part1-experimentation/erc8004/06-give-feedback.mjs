@@ -39,8 +39,8 @@ async function main() {
   if (primaryBalance < fundAmount * 2n) {
     console.log("\n⚠️  Primary wallet doesn't have enough ETH to fund a second wallet.");
     console.log("   Skipping on-chain feedback. Here's what WOULD happen:");
-    console.log("   - Second wallet calls giveFeedback(agentId, 85, 0, 'quality', 'test', ...)");
-    console.log("   - ReputationRegistry stores: value=85, tag1='quality', tag2='test'");
+    console.log("   - Second wallet calls giveFeedback(agentId, 100, 0, 'quality', 'test', ...)");
+    console.log("   - ReputationRegistry stores: value=100, tag1='quality', tag2='test'");
     console.log("   - Anyone can read it with readFeedback() or getSummary()");
     return;
   }
@@ -57,13 +57,13 @@ async function main() {
   const reputationRegistry = getReputationRegistry(feedbackWallet);
 
   console.log("\nSubmitting feedback...");
-  console.log("  Value:    85 (out of 100)");
+  console.log("  Value:    100 (out of 100)");
   console.log("  Tag1:     quality");
   console.log("  Tag2:     test-run");
 
   const tx = await reputationRegistry.giveFeedback(
     agentId,
-    85,                        // value: 85/100
+    100,                       // value: 100/100
     0,                         // valueDecimals: 0 (integer score)
     "quality",                 // tag1
     "test-run",                // tag2
