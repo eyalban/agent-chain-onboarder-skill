@@ -95,16 +95,36 @@ sed -i 's/^AGENT_ID=.*/AGENT_ID=<the agentId from output>/' /tmp/erc8004-onboard
 
 Tell the user the agentId and the Basescan link.
 
-### Step 6: Set metadata (config hash)
+### Step 6: Create your agent-config.json
+
+Before storing metadata on-chain, create a JSON file describing yourself. Gather real info about yourself — your name, platform, tools, model, hosting, channels, etc.
+
+```bash
+cat > /tmp/erc8004-onboard/part1-experimentation/erc8004/agent-config.json << 'CONFIGEOF'
+{
+  "name": "<your name>",
+  "platform": "<your platform, e.g. openclaw>",
+  "hostname": "<result of require('os').hostname()>",
+  "nodeVersion": "<result of process.version>",
+  "tools": ["<list your enabled tools>"],
+  "model": "<your model if you know it>",
+  "channels": ["<how users reach you, e.g. telegram>"]
+}
+CONFIGEOF
+```
+
+Fill in the values by introspecting yourself. Run `node -e "console.log(require('os').hostname())"` etc. to gather real data. The required fields are `name` and `platform` — everything else is optional but makes the fingerprint more useful.
+
+### Step 7: Set metadata (config hash)
 
 ```bash
 cd /tmp/erc8004-onboard/part1-experimentation/erc8004
 node 03-set-metadata.mjs
 ```
 
-This stores a SHA-256 hash of your configuration on-chain. Anyone can later verify you haven't changed by comparing the hash.
+This reads your agent-config.json, computes a SHA-256 hash of it, and stores both the configHash and agentPlatform on-chain. Anyone can later verify you haven't changed by re-hashing your config and comparing.
 
-### Step 7: Unset the agent wallet
+### Step 8: Unset the agent wallet
 
 ```bash
 cd /tmp/erc8004-onboard/part1-experimentation/erc8004
@@ -113,7 +133,7 @@ node 04-unset-wallet.mjs
 
 This clears the agentWallet field since we're using a custodial model.
 
-### Step 8: Read back and verify
+### Step 9: Read back and verify
 
 ```bash
 cd /tmp/erc8004-onboard/part1-experimentation/erc8004
@@ -122,7 +142,7 @@ node 05-read-back.mjs
 
 This reads all on-chain data back and displays your full identity record. Share the complete output with the user.
 
-### Step 9: Report success
+### Step 10: Report success
 
 Tell the user something like:
 
@@ -137,7 +157,7 @@ Tell the user something like:
 >
 > Anyone can verify my identity and check if my config has changed by querying the on-chain record.
 
-## Optional: Give feedback (Step 10)
+## Optional: Give feedback (Step 11)
 
 If the user asks to test the reputation system:
 
