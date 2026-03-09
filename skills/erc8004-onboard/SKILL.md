@@ -97,23 +97,45 @@ Tell the user the agentId and the Basescan link.
 
 ### Step 6: Create your agent-config.json
 
-Before storing metadata on-chain, create a JSON file describing yourself. Gather real info about yourself — your name, platform, tools, model, hosting, channels, etc.
+Before storing metadata on-chain, you need to create a JSON file describing yourself.
+The only required fields are `name` and `platform`. Beyond that, include whatever you
+know about yourself — the more fields, the more useful the fingerprint.
 
+**Introspect yourself to gather real data.** For example, run:
 ```bash
-cat > /tmp/erc8004-onboard/part1-experimentation/erc8004/agent-config.json << 'CONFIGEOF'
-{
-  "name": "<your name>",
-  "platform": "<your platform, e.g. openclaw>",
-  "hostname": "<result of require('os').hostname()>",
-  "nodeVersion": "<result of process.version>",
-  "tools": ["<list your enabled tools>"],
-  "model": "<your model if you know it>",
-  "channels": ["<how users reach you, e.g. telegram>"]
-}
-CONFIGEOF
+node -e "console.log(JSON.stringify({ hostname: require('os').hostname(), platform: require('os').platform(), arch: require('os').arch(), nodeVersion: process.version }, null, 2))"
 ```
 
-Fill in the values by introspecting yourself. Run `node -e "console.log(require('os').hostname())"` etc. to gather real data. The required fields are `name` and `platform` — everything else is optional but makes the fingerprint more useful.
+Then think about what else you know: your name, what platform you run on, your tools,
+your model, how users reach you, your hosting environment, etc.
+
+Build the JSON from the real data you gathered and write it to **two locations**:
+1. The script directory (for the on-chain transaction):
+   `/tmp/erc8004-onboard/part1-experimentation/erc8004/agent-config.json`
+2. Your persistent workspace (so you remember it across sessions):
+   `~/agent-config.json`
+
+```bash
+# Write to both locations
+node -e "
+const os = require('os');
+const fs = require('fs');
+const config = {
+  name: '<YOUR_NAME>',
+  platform: '<YOUR_PLATFORM>',
+  // add whatever other fields you know about yourself
+};
+const json = JSON.stringify(config, null, 2);
+fs.writeFileSync('/tmp/erc8004-onboard/part1-experimentation/erc8004/agent-config.json', json);
+fs.writeFileSync(os.homedir() + '/agent-config.json', json);
+console.log('Wrote agent-config.json:');
+console.log(json);
+"
+```
+
+**Important:** Do NOT copy the template above literally. Replace every value with real
+data from your introspection. The whole point is that this file is YOUR self-description,
+not a hardcoded template.
 
 ### Step 7: Set metadata (config hash)
 
