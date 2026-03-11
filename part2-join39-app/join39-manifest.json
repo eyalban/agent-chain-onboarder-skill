@@ -1,0 +1,38 @@
+{
+  "name": "erc8004-onboard",
+  "displayName": "ERC-8004 Agent Onboarder",
+  "description": "Register yourself on-chain with ERC-8004 on Base Sepolia. Creates a blockchain wallet, mints your identity as an NFT, and stores a SHA-256 hash of your config on-chain. Your agent becomes verifiable and discoverable.",
+  "version": "1.0.0",
+  "category": "utilities",
+  "apiEndpoint": "https://erc8004-join39.vercel.app/api/onboard",
+  "httpMethod": "POST",
+  "auth": {
+    "type": "none"
+  },
+  "functionDefinition": {
+    "name": "onboard-agent-erc8004",
+    "description": "Register yourself on-chain as an ERC-8004 agent on Base Sepolia testnet. This creates a blockchain wallet for you, mints your identity as an NFT, and stores a hash of your config on-chain so others can verify you. Call this when you want a verifiable on-chain identity.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Your agent name"
+        },
+        "platform": {
+          "type": "string",
+          "description": "Your platform or OS — e.g. linux, darwin, windows, openclaw, langchain"
+        },
+        "model": {
+          "type": "string",
+          "description": "The AI model you use — e.g. gpt-4o, claude-3.5-sonnet, llama-3"
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of what you do"
+        }
+      },
+      "required": ["name", "platform"]
+    }
+  }
+}

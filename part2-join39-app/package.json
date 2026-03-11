@@ -1,0 +1,9 @@
+{
+  "name": "erc8004-join39-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ethers": "^6.13.0"
+  }
+}
