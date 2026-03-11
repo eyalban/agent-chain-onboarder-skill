@@ -230,11 +230,15 @@ async function main() {
       console.log("\nOn-chain hash differs — updating...");
     }
 
+    // Get nonce explicitly to avoid race conditions between consecutive txs
+    let nonce = await agentWallet.getNonce();
+
     console.log("\n1/2 Setting configHash...");
     const tx1 = await identityRegistry.setMetadata(
       agentId,
       "configHash",
-      ethers.toUtf8Bytes(configHash)
+      ethers.toUtf8Bytes(configHash),
+      { nonce: nonce++ }
     );
     console.log("   Tx:", tx1.hash);
     await tx1.wait();
@@ -244,7 +248,8 @@ async function main() {
     const tx2 = await identityRegistry.setMetadata(
       agentId,
       "agentPlatform",
-      ethers.toUtf8Bytes(agentConfig.platform)
+      ethers.toUtf8Bytes(agentConfig.platform),
+      { nonce: nonce++ }
     );
     console.log("   Tx:", tx2.hash);
     await tx2.wait();
