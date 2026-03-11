@@ -217,50 +217,63 @@ async function main() {
   console.log("Agent config:", canonical);
   console.log("Config hash:", configHash);
 
-  // Check if configHash already matches on-chain
-  const existingHashBytes = await getIdentityRegistry(provider).getMetadata(agentId, "configHash");
+  // Check if both configHash and agentPlatform already match on-chain
+  const readRegistry = getIdentityRegistry(provider);
+  const existingHashBytes = await readRegistry.getMetadata(agentId, "configHash");
+  const existingPlatformBytes = await readRegistry.getMetadata(agentId, "agentPlatform");
   const existingHash = ethers.dataLength(existingHashBytes) > 0
     ? ethers.toUtf8String(existingHashBytes)
     : "";
+  const existingPlatform = ethers.dataLength(existingPlatformBytes) > 0
+    ? ethers.toUtf8String(existingPlatformBytes)
+    : "";
 
-  if (existingHash === configHash) {
-    console.log("\n✓ configHash already matches on-chain. Skipping metadata transactions.");
+  const hashMatches = existingHash === configHash;
+  const platformMatches = existingPlatform === agentConfig.platform;
+
+  if (hashMatches && platformMatches) {
+    console.log("\n✓ configHash and agentPlatform already match on-chain. Skipping metadata transactions.");
   } else {
-    if (existingHash) {
-      console.log("\nOn-chain hash differs — updating...");
-    }
-
     // Get nonce explicitly to avoid race conditions between consecutive txs
     let nonce = await agentWallet.getNonce();
 
-    console.log("\n1/2 Setting configHash...");
-    const tx1 = await identityRegistry.setMetadata(
-      agentId,
-      "configHash",
-      ethers.toUtf8Bytes(configHash),
-      { nonce: nonce++ }
-    );
-    console.log("   Tx:", tx1.hash);
-    await tx1.wait();
-    console.log("   ✓ Confirmed");
+    if (!hashMatches) {
+      if (existingHash) console.log("\nOn-chain configHash differs — updating...");
+      console.log("\n1/2 Setting configHash...");
+      const tx1 = await identityRegistry.setMetadata(
+        agentId,
+        "configHash",
+        ethers.toUtf8Bytes(configHash),
+        { nonce: nonce++ }
+      );
+      console.log("   Tx:", tx1.hash);
+      await tx1.wait();
+      console.log("   ✓ Confirmed");
+    } else {
+      console.log("\n✓ configHash already matches on-chain. Skipping.");
+    }
 
-    console.log("2/2 Setting agentPlatform...");
-    const tx2 = await identityRegistry.setMetadata(
-      agentId,
-      "agentPlatform",
-      ethers.toUtf8Bytes(agentConfig.platform),
-      { nonce: nonce++ }
-    );
-    console.log("   Tx:", tx2.hash);
-    await tx2.wait();
-    console.log("   ✓ Confirmed");
+    if (!platformMatches) {
+      if (existingPlatform) console.log("\nOn-chain agentPlatform differs — updating...");
+      console.log("2/2 Setting agentPlatform...");
+      const tx2 = await identityRegistry.setMetadata(
+        agentId,
+        "agentPlatform",
+        ethers.toUtf8Bytes(agentConfig.platform),
+        { nonce: nonce++ }
+      );
+      console.log("   Tx:", tx2.hash);
+      await tx2.wait();
+      console.log("   ✓ Confirmed");
+    } else {
+      console.log("✓ agentPlatform already matches on-chain. Skipping.");
+    }
   }
 
   // ── Step 5: Read back and display ───────────────────────────────
 
   console.log("\n── Step 5: On-Chain Identity ─────────────────────────\n");
 
-  const readRegistry = getIdentityRegistry(provider);
   const owner = await readRegistry.ownerOf(agentId);
   const tokenURI = await readRegistry.tokenURI(agentId);
   const onChainWallet = await readRegistry.getAgentWallet(agentId);
