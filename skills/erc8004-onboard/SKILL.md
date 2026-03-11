@@ -1,6 +1,6 @@
 ---
 name: erc8004-onboard
-description: Register yourself on-chain using the ERC-8004 IdentityRegistry on Base Sepolia. Creates a portable NFT identity with a verified config hash.
+description: Register yourself on-chain using the ERC-8004 IdentityRegistry on Base Sepolia. Creates a portable NFT identity that YOU own, with a verified config hash fingerprint.
 triggers:
   - register on chain
   - register on blockchain
@@ -16,117 +16,80 @@ requires:
 
 # ERC-8004 On-Chain Identity Registration
 
-You are registering yourself as an agent on the ERC-8004 IdentityRegistry on Base Sepolia (Ethereum L2 testnet). This creates a portable, verifiable NFT identity for you on the blockchain.
+You are registering yourself as an agent on the ERC-8004 IdentityRegistry on Base Sepolia (Ethereum L2 testnet). This creates a portable, verifiable NFT identity that **you own**.
 
-## What This Does
+## Overview
 
-1. Clones the registration scripts from GitHub
-2. Generates an Ethereum wallet (or uses an existing one)
-3. Registers you on the ERC-8004 IdentityRegistry — minting an ERC-721 NFT
-4. Stores your config hash on-chain (so others can verify you haven't changed)
-5. Gives you a unique on-chain agentId and a Basescan link
+| Phase | What happens | Human needed? |
+|-------|-------------|---------------|
+| 1. Self-Introspection | You describe yourself in a config file | No |
+| 2. On-Chain Registration | `node onboard.mjs` does everything | No |
 
-## Steps
+The registration script will:
+- Generate a dedicated Ethereum wallet for you
+- Fund it from a pre-funded wallet
+- Register you on the ERC-8004 IdentityRegistry (you own the NFT)
+- Store a SHA-256 hash of your config on-chain
+- Display your full on-chain identity
 
-### Step 1: Clone the repo and install dependencies
+---
+
+## Phase 1: Setup & Self-Introspection
+
+### Step 1: Clone and install
 
 ```bash
 cd /tmp
 git clone https://github.com/eyalban/agent-chain-onboarder-skill.git erc8004-onboard 2>/dev/null || (cd /tmp/erc8004-onboard && git pull)
-cd /tmp/erc8004-onboard/part1-experimentation/erc8004
+cd /tmp/erc8004-onboard/skills/erc8004-onboard
 npm install
 ```
 
-### Step 2: Check if a wallet already exists
+### Step 2: Check for .env
 
-Check if `/tmp/erc8004-onboard/part1-experimentation/erc8004/.env` exists and has a PRIVATE_KEY set (not the placeholder value).
+Check if `/tmp/erc8004-onboard/skills/erc8004-onboard/.env` exists and has `FUNDER_PRIVATE_KEY` set.
 
-- If YES: read the .env and skip to Step 4.
-- If NO: proceed to Step 3.
-
-### Step 3: Generate a new wallet
-
-Run:
-```bash
-cd /tmp/erc8004-onboard/part1-experimentation/erc8004
-node 01-generate-wallet.mjs
-```
-
-This will print a new wallet address and private key. Create the `.env` file:
+- If YES: proceed to Step 3.
+- If NO: ask the user to provide a funded Base Sepolia wallet private key, then create `.env`:
 
 ```bash
-cat > /tmp/erc8004-onboard/part1-experimentation/erc8004/.env << 'ENVEOF'
-PRIVATE_KEY=<the private key from the output>
+cat > /tmp/erc8004-onboard/skills/erc8004-onboard/.env << 'ENVEOF'
+FUNDER_PRIVATE_KEY=<the private key the user provides>
 RPC_URL=https://sepolia.base.org
-AGENT_ID=
 ENVEOF
 ```
 
-Then tell the user:
-> I've generated a new Ethereum wallet: `<address>`
-> To proceed, you need to send some Base Sepolia testnet ETH to this address.
-> You can get free testnet ETH from: https://www.alchemy.com/faucets/base-sepolia
-> Let me know once you've funded it.
+**STOP and wait for the user to provide the key if you don't have it.**
 
-**STOP HERE and wait for the user to confirm the wallet is funded before continuing.**
+### Step 3: Create agent-config.json
 
-### Step 4: Verify wallet balance
+Introspect yourself to gather real data about who you are. The only required fields
+are `name` and `platform`. Beyond that, include whatever you know — the more fields,
+the more useful the fingerprint.
 
-```bash
-cd /tmp/erc8004-onboard/part1-experimentation/erc8004
-node 01-generate-wallet.mjs
-```
-
-Check the output. If balance is 0, tell the user and wait. If balance > 0, proceed.
-
-### Step 5: Register on ERC-8004
-
-```bash
-cd /tmp/erc8004-onboard/part1-experimentation/erc8004
-node 02-register-agent.mjs
-```
-
-This mints an ERC-721 NFT on the IdentityRegistry. The output will include an `agentId`.
-
-Update the `.env` file to include the AGENT_ID:
-```bash
-sed -i 's/^AGENT_ID=.*/AGENT_ID=<the agentId from output>/' /tmp/erc8004-onboard/part1-experimentation/erc8004/.env
-```
-
-Tell the user the agentId and the Basescan link.
-
-### Step 6: Create your agent-config.json
-
-Before storing metadata on-chain, you need to create a JSON file describing yourself.
-The only required fields are `name` and `platform`. Beyond that, include whatever you
-know about yourself — the more fields, the more useful the fingerprint.
-
-**Introspect yourself to gather real data.** For example, run:
+**Gather runtime data:**
 ```bash
 node -e "console.log(JSON.stringify({ hostname: require('os').hostname(), platform: require('os').platform(), arch: require('os').arch(), nodeVersion: process.version }, null, 2))"
 ```
 
-Then think about what else you know: your name, what platform you run on, your tools,
+**Think about what else you know:** your name, what platform you run on, your tools,
 your model, how users reach you, your hosting environment, etc.
 
-Build the JSON from the real data you gathered and write it to **two locations**:
-1. The script directory (for the on-chain transaction):
-   `/tmp/erc8004-onboard/part1-experimentation/erc8004/agent-config.json`
-2. Your persistent workspace (so you remember it across sessions):
-   `~/agent-config.json`
+**Build the JSON from real data and write it to two locations:**
 
 ```bash
-# Write to both locations
+# Write to both script dir (for the tx) and home (for persistence)
 node -e "
 const os = require('os');
 const fs = require('fs');
 const config = {
+  // FILL WITH YOUR REAL DATA — do NOT copy this template literally
   name: '<YOUR_NAME>',
   platform: '<YOUR_PLATFORM>',
-  // add whatever other fields you know about yourself
+  // add any other fields you know about yourself
 };
 const json = JSON.stringify(config, null, 2);
-fs.writeFileSync('/tmp/erc8004-onboard/part1-experimentation/erc8004/agent-config.json', json);
+fs.writeFileSync('/tmp/erc8004-onboard/skills/erc8004-onboard/agent-config.json', json);
 fs.writeFileSync(os.homedir() + '/agent-config.json', json);
 console.log('Wrote agent-config.json:');
 console.log(json);
@@ -134,58 +97,54 @@ console.log(json);
 ```
 
 **Important:** Do NOT copy the template above literally. Replace every value with real
-data from your introspection. The whole point is that this file is YOUR self-description,
-not a hardcoded template.
+data from your introspection. The whole point is that this file is YOUR self-description.
 
-### Step 7: Set metadata (config hash)
+---
 
-```bash
-cd /tmp/erc8004-onboard/part1-experimentation/erc8004
-node 03-set-metadata.mjs
-```
+## Phase 2: On-Chain Registration
 
-This reads your agent-config.json, computes a SHA-256 hash of it, and stores both the configHash and agentPlatform on-chain. Anyone can later verify you haven't changed by re-hashing your config and comparing.
-
-### Step 8: Unset the agent wallet
+### Step 4: Run onboard.mjs
 
 ```bash
-cd /tmp/erc8004-onboard/part1-experimentation/erc8004
-node 04-unset-wallet.mjs
+cd /tmp/erc8004-onboard/skills/erc8004-onboard
+node onboard.mjs
 ```
 
-This clears the agentWallet field since we're using a custodial model.
+This single command:
+1. Generates a dedicated wallet for you (saved to .env, never printed)
+2. Funds it from the funder wallet
+3. Registers you on ERC-8004 (you own the NFT)
+4. Stores your config hash and platform on-chain
+5. Displays your full on-chain identity
 
-### Step 9: Read back and verify
+### Step 5: Report success
 
-```bash
-cd /tmp/erc8004-onboard/part1-experimentation/erc8004
-node 05-read-back.mjs
-```
+Tell the user:
 
-This reads all on-chain data back and displays your full identity record. Share the complete output with the user.
-
-### Step 10: Report success
-
-Tell the user something like:
-
-> I've successfully registered myself on the ERC-8004 IdentityRegistry on Base Sepolia!
+> I've registered myself on the ERC-8004 IdentityRegistry on Base Sepolia!
 >
 > Here's my on-chain identity:
 > - Agent ID: <agentId>
+> - My Wallet: <agent wallet address>
 > - Config Hash: <hash>
 > - Registry: 0x8004A818BFB912233c491871b3d84c89A494BD9e
 > - Chain: Base Sepolia (84532)
 > - Basescan: <link>
 >
-> Anyone can verify my identity and check if my config has changed by querying the on-chain record.
+> I own my own NFT identity. Anyone can verify my identity and check if my
+> config has changed by querying the on-chain record.
 
-## Optional: Give feedback (Step 11)
+---
+
+## Optional: Give Feedback
 
 If the user asks to test the reputation system:
 
 ```bash
-cd /tmp/erc8004-onboard/part1-experimentation/erc8004
-node 06-give-feedback.mjs
+cd /tmp/erc8004-onboard/skills/erc8004-onboard
+node give-feedback.mjs [score] [tag1] [tag2]
 ```
 
-Note: This requires a second wallet (you can't give yourself feedback). The script handles this automatically by creating and funding a temporary wallet.
+Defaults: score=100, tag1="quality", tag2="test-run".
+
+Note: Feedback is submitted from the funder wallet (you can't give yourself feedback since you own your own NFT).
